@@ -20,7 +20,7 @@ pid_t passthru(int sock1, int sock2, int share_id){
 	}
 	
 	if(pid == 0){
-		char *buf = malloc(BUF_SIZE);
+		char buf[BUF_SIZE];
 		while(1){
 			ssize_t received = recv(sock1, buf, BUF_SIZE, 0);
 			if(received == 0) break;
@@ -78,54 +78,54 @@ int main(int argc, char** argv){
 	printf("Listen: %s \n", argv[1]);
 	
 	while(1){
-		struct sockaddr_in addr;
-		socklen_t len = sizeof(addr);
-		
-		int sock = accept(ssock, (struct sockaddr *)&addr, &len);
-		if(sock < 0){
-			perror("accept");
-			continue;
-		}
-		
-		char addr_str[32];
-		sprintf(addr_str, "%s:%d", inet_ntoa(addr.sin_addr), ntohs(addr.sin_port));
-		
-		struct sockaddr_in caddr;
-		#ifdef __linux
-		if(getsockopt(sock, IPPROTO_IP, SO_ORIGINAL_DST, &caddr, &len)){
-			perror("getsockopt");
-			continue;
-		}
-		#else
-		caddr.sin_family = AF_INET;
-		caddr.sin_port = htons(80);
-		caddr.sin_addr.s_addr = inet_addr("163.44.171.5");
-		#endif
-		
-		int csock = socket(AF_INET, SOCK_STREAM, 0);
-		if(csock < 0){
-			perror("socket");
-			continue;
-		}
-		
-		if(connect(csock, (struct sockaddr *)&caddr, sizeof(caddr))){
-			perror("connect");
-			continue;
-		}
-		
-		printf("Establish: %s -> %s:%d \n", addr_str, inet_ntoa(caddr.sin_addr), ntohs(caddr.sin_port));
-		
 		pid_t pid = fork();
 		if(pid < 0){
 			perror("fork");
-			continue;
+			exit(-1);
 		}
 		
 		if(pid == 0){
+			struct sockaddr_in addr;
+			socklen_t len = sizeof(addr);
+			
+			int sock = accept(ssock, (struct sockaddr *)&addr, &len);
+			if(sock < 0){
+				perror("accept");
+				exit(-1);
+			}
+			
+			char addr_str[32];
+			sprintf(addr_str, "%s:%d", inet_ntoa(addr.sin_addr), ntohs(addr.sin_port));
+			
+			struct sockaddr_in caddr;
+			#ifdef __linux
+			if(getsockopt(sock, IPPROTO_IP, SO_ORIGINAL_DST, &caddr, &len)){
+				perror("getsockopt");
+				exit(-1);
+			}
+			#else
+			caddr.sin_family = AF_INET;
+			caddr.sin_port = htons(80);
+			caddr.sin_addr.s_addr = inet_addr("163.44.171.5");
+			#endif
+			
+			int csock = socket(AF_INET, SOCK_STREAM, 0);
+			if(csock < 0){
+				perror("socket");
+				exit(-1);
+			}
+			
+			if(connect(csock, (struct sockaddr *)&caddr, sizeof(caddr))){
+				perror("connect");
+				exit(-1);
+			}
+			
+			printf("Establish: %s -> %s:%d \n", addr_str, inet_ntoa(caddr.sin_addr), ntohs(caddr.sin_port));
+			
 			int share_id = shmget(IPC_PRIVATE, 2 * sizeof(pid_t), 0600);
 			if(share_id < 0){
 				perror("shmget");
-				continue;
+				exit(-1);
 			}
 			
 			pid_t *pids = shmat(share_id, NULL, 0);
