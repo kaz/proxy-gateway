@@ -1,0 +1,10 @@
+[Unit]
+Description=TCP proxy gateway
+After=syslog.target network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/sbin/proxy-gw 14514
+
+[Install]
+WantedBy=multi-user.target
