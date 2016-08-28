@@ -84,7 +84,7 @@ int main(int argc, char** argv){
 		int sock = accept(ssock, (struct sockaddr *)&addr, &len);
 		if(sock < 0){
 			perror("accept");
-			exit(-1);
+			continue;
 		}
 		
 		char addr_str[32];
@@ -105,12 +105,12 @@ int main(int argc, char** argv){
 		int csock = socket(AF_INET, SOCK_STREAM, 0);
 		if(csock < 0){
 			perror("socket");
-			exit(-1);
+			continue;
 		}
 		
 		if(connect(csock, (struct sockaddr *)&caddr, sizeof(caddr))){
 			perror("connect");
-			exit(-1);
+			continue;
 		}
 		
 		printf("Establish: %s -> %s:%d \n", addr_str, inet_ntoa(caddr.sin_addr), ntohs(caddr.sin_port));
@@ -118,14 +118,14 @@ int main(int argc, char** argv){
 		pid_t pid = fork();
 		if(pid < 0){
 			perror("fork");
-			exit(-1);
+			continue;
 		}
 		
 		if(pid == 0){
 			int share_id = shmget(IPC_PRIVATE, 2 * sizeof(pid_t), 0600);
 			if(share_id < 0){
 				perror("shmget");
-				exit(-1);
+				continue;
 			}
 			
 			pid_t *pids = shmat(share_id, NULL, 0);

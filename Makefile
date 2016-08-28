@@ -8,7 +8,7 @@ install:
 	cp proxy-gw.service /etc/systemd/system
 	systemctl daemon-reload
 	systemctl enable proxy-gw
-	systemctl start proxy-gw
+	systemctl restart proxy-gw
 
 route:
 	iptables -t nat -F
